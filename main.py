@@ -1,7 +1,9 @@
 import gym_cutting_stock
 import gymnasium as gym
+import logging
 from policy import GreedyPolicy, RandomPolicy
 from student_submissions.s2210xxx.policy2210xxx import Policy2210xxx
+from gym_cutting_stock.logging_config import logger, set_log_level
 
 # Create the environment
 env = gym.make(
@@ -11,48 +13,69 @@ env = gym.make(
 NUM_EPISODES = 100
 
 if __name__ == "__main__":
+    # Logger mode selection
+    mode = int(input("Choose logger mode: \n1. INFO\n2. DEBUG\nEnter choice: "))
+    if mode == 1:
+        set_log_level(logging.INFO)
+    else:
+        set_log_level(logging.DEBUG)
+
+    # Policy selection
+    mode = int(input("Choose mode: 1. GreedyPolicy, 2. RandomPolicy, 3. Your policy: "))
+    if mode == 1:
+        policy = GreedyPolicy()
+    elif mode == 2:
+        policy = RandomPolicy()
+    else:
+        policy = Policy2210xxx()
+
     # Reset the environment
     observation, info = env.reset(seed=42)
 
-    # Test GreedyPolicy
-    gd_policy = GreedyPolicy()
-    ep = 0
-    while ep < NUM_EPISODES:
-        action = gd_policy.get_action(observation, info)
-        observation, reward, terminated, truncated, info = env.step(action)
-
-        if terminated or truncated:
-            observation, info = env.reset(seed=ep)
-            print(info)
-            ep += 1
-
-    # Reset the environment
+    # Reset the environment for the first episode
     observation, info = env.reset(seed=42)
 
-    # Test RandomPolicy
-    rd_policy = RandomPolicy()
+    # Validation log for initial products
+    for idx, product in enumerate(observation['products']):
+        logger.debug(f"Initial Product {idx}: Size={product['size']}, Quantity={product['quantity']}")
+
+    # Validation log for initial stocks (optional)
+    logger.debug(f"Initial number of stocks: {len(observation['stocks'])}")
+
+    # Print the initial observation
+    logger.debug(f"Initial observation: {observation}")
+
     ep = 0
     while ep < NUM_EPISODES:
-        action = rd_policy.get_action(observation, info)
+        action = policy.get_action(observation, info)
         observation, reward, terminated, truncated, info = env.step(action)
 
+        logger.debug("Step info:")
+        logger.debug(f"- Action: {action}")
+        logger.debug(f"- Remaining products: {len([p for p in observation['products'] if p['quantity'] > 0])}")
+        logger.debug(f"- Available stocks: {len(observation['stocks'])}")
+
+        if terminated:
+            logger.info(f"Episode {ep} terminated:")
+            logger.info(f"- Final filled ratio: {info.get('filled_ratio', 'unknown')}")
+            logger.info(
+                f"- Reason: {'No more products' if not len([p for p in observation['products'] if p['quantity'] > 0]) else 'Cannot place products'}")
+
+        if truncated:
+            logger.info(f"Episode {ep} truncated:")
+            logger.info(f"- Steps taken: {info.get('steps', 'unknown')}")
+
         if terminated or truncated:
+            # Reset the environment for the next episode
             observation, info = env.reset(seed=ep)
-            print(info)
+
+            # Validation log for initial products
+            for idx, product in enumerate(observation['products']):
+                logger.debug(f"Initial Product {idx}: Size={product['size']}, Quantity={product['quantity']}")
+
+            # Validation log for initial stocks (optional)
+            logger.debug(f"Initial number of stocks: {len(observation['stocks'])}")
+
             ep += 1
-
-    # Uncomment the following code to test your policy
-    # # Reset the environment
-    # observation, info = env.reset(seed=42)
-    # print(info)
-
-    # policy2210xxx = Policy2210xxx()
-    # for _ in range(200):
-    #     action = policy2210xxx.get_action(observation, info)
-    #     observation, reward, terminated, truncated, info = env.step(action)
-    #     print(info)
-
-    #     if terminated or truncated:
-    #         observation, info = env.reset()
 
 env.close()

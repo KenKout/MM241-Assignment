@@ -37,6 +37,25 @@ After you complete your policy, you need to submit your code as a pull request t
 
 Any solutions that are not submitted as a pull request or do not follow the above guidelines will not be accepted. If you have any questions or need help implementing your policy, please post a message in the discussion forum.
 
+## Logging Configuration
+
+You can control the verbosity of logging output using `set_log_level`:
+
+```python
+from gym_cutting_stock.logging_config import set_log_level
+import logging
+
+# Set logging level - options are:
+set_log_level(logging.DEBUG)    # Most verbose
+set_log_level(logging.INFO)     # Default level
+set_log_level(logging.WARNING)  # Only warnings and errors
+set_log_level(logging.ERROR)    # Only errors
+
+# You can also use string names:
+set_log_level('DEBUG')
+set_log_level('INFO')
+```
+
 ## Contributing
 <!-- Describe how to contribute to the project -->
 To contribute to the project, you need to fork the repository and create a new branch. Once you have made your changes, you can create a pull request to merge your changes into the main branch.
